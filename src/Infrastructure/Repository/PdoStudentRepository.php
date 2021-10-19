@@ -42,13 +42,15 @@ class PdoStudentRepository implements StudentRepository
                 $student['name'],
                 new \DateTimeImmutable($student['birth_date']));
 
-            $this->fillPhoneOf($student);
+            //$this->fillPhoneOf($student);
         }
         return $studentList;
     }
 
+    /*
     private function fillPhoneOf(Student $student): void
     {
+        N+1
         $sqlFind = ("SELECT id, area_code, number FROM phones WHERE student_id = ?");
         $stmt = $this->pdo->prepare($sqlFind);
         $stmt->bindValue(1, $student->id(), PDO::PARAM_INT);
@@ -63,6 +65,7 @@ class PdoStudentRepository implements StudentRepository
             $student->addPhone($phone);
         }
     }
+    */
 
     private function insert(Student $student): bool
     {
@@ -104,5 +107,35 @@ class PdoStudentRepository implements StudentRepository
             return false;
         }
         return true;
+    }
+
+    public function studentsWithPhone(): array
+    {
+        $sql = "SELECT students.id, 
+        students.name, 
+        students.birth_date,
+        phones.id AS phone_id, 
+        phones.area_code,
+        phones.number FROM students
+        JOIN phones ON students.id = phones.student_id";
+
+        $stmt = $this->pdo->query($sql);
+        $result = $stmt->fetchAll();
+        $studentList = [];
+
+        foreach ($result as $row) {
+            if(!array_key_exists($row['id'], $studentList)){
+                $studentList[$row['id']] = new Student(
+                    $row['id'],
+                    $row['name'],
+                    new \DateTimeImmutable($row['birth_date'])
+                );
+            }
+
+            $phone = new Phone($row['phone_id'], $row['area_code'], $row['number']);
+            $studentList[$row['id']]->addPhone($phone);
+        }
+
+        return $studentList;
     }
 }
