@@ -2,6 +2,7 @@
 
 namespace Alura\Pdo\Infrastructure\Repository;
 
+use Alura\Pdo\Domain\Model\Phone;
 use Alura\Pdo\Domain\Model\Student;
 use Alura\Pdo\Domain\Repository\StudentRepository;
 use PDO;
@@ -36,12 +37,31 @@ class PdoStudentRepository implements StudentRepository
     {
         $studentList = [];
         foreach ($stmt->fetchAll() as $student) {
-            $studentList[] = new Student(
+            $studentList[] = $student = new Student(
                 $student['id'],
                 $student['name'],
                 new \DateTimeImmutable($student['birth_date']));
+
+            $this->fillPhoneOf($student);
         }
         return $studentList;
+    }
+
+    private function fillPhoneOf(Student $student): void
+    {
+        $sqlFind = ("SELECT id, area_code, number FROM phones WHERE student_id = ?");
+        $stmt = $this->pdo->prepare($sqlFind);
+        $stmt->bindValue(1, $student->id(), PDO::PARAM_INT);
+
+        if(!$stmt->execute()){
+            return;
+        }
+
+        $phonesList = $stmt->fetchAll();
+        foreach ($phonesList as $phone){
+            $phone = new Phone($phone['id'], $phone['area_code'], $phone['number']);
+            $student->addPhone($phone);
+        }
     }
 
     private function insert(Student $student): bool
