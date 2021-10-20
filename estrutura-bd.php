@@ -22,4 +22,3 @@ $createTableSql = '
 ';
 
 $pdo->exec($createTableSql);
-$pdo->exec("INSERT INTO phones (id, area_code, number, student_id) VALUES (1, '21', '967218047', 1)");
